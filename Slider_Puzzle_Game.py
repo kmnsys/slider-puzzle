@@ -1,6 +1,7 @@
 import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import QMainWindow, QApplication,QHBoxLayout,\
+                            QAction, qApp, QWidget, QMessageBox, QLabel,QPushButton
+from PyQt5.QtGui import QDesktopServices, QFont
 from PyQt5.QtCore import QUrl
 import random
 
@@ -37,19 +38,21 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         file = menubar.addMenu("About")
 
-        openfile = QAction("Github Codes", self)
-        openfile.triggered.connect(self.openUrl)
-        file.addAction(openfile)
+        github = QAction("Github Codes", self)
+        github.triggered.connect(self.openUrl)
+        github.setStatusTip("Click To Connect Github and View The Codes")
+        file.addAction(github)
 
-        exitAct = QAction(QIcon("quit.png"), "Çıkış", self)
+        exitAct = QAction("Quit", self)
         exitAct.setShortcut('Ctrl+Q')
+        exitAct.setStatusTip("Click to quit")
         exitAct.triggered.connect(qApp.quit)
         file.addAction(exitAct)
 
-
+        self.statusBar()
         self.setStyleSheet("background-color: white")
-        self.setGeometry(300, 250, 550, 375)
-        self.setFixedSize(550, 375)
+        self.setGeometry(300, 250, 590, 375)
+        self.setFixedSize(590, 375)
         self.setWindowTitle('Slider Puzzle | Selman Y.')
         self.show()
 
@@ -65,7 +68,6 @@ class PlaceButton(QWidget):
         super().__init__()
 
         self.clickCount = 0
-        self.cntrl = True
         self.initPB()
 
     def initPB(self):
@@ -77,7 +79,7 @@ class PlaceButton(QWidget):
         self.clickCountLabel = QLabel()
         hbox.addWidget(self.label)
         hbox.addWidget(self.clickCountLabel)
-        self.clickCountLabel.setMaximumWidth(170)
+        self.clickCountLabel.setMaximumWidth(210)
         self.clickCountLabel.setFont(self.font)
         self.clickCountLabel.setStyleSheet("color: #585942")
 
@@ -85,7 +87,6 @@ class PlaceButton(QWidget):
         self.table()
 
     def table(self):
-
         self.one = ""
         self.two = ""
         self.three = ""
@@ -135,7 +136,6 @@ class PlaceButton(QWidget):
         self.buttonsOrder.append(0)
 
     def moveButton(self):
-
         sender = self.sender()
         self.senderC = sender
         senderText = sender.text()
@@ -150,7 +150,6 @@ class PlaceButton(QWidget):
                         self.emptyCooords[1] - self.pressButtonCoords[1])
 
         if diffCoords == m1 or diffCoords == m2:
-
             sender.move(*self.emptyCooords)
             self.organize(senderText, sender)
 
@@ -160,7 +159,6 @@ class PlaceButton(QWidget):
             self.finishGame()
 
         elif diffTwoBlock == m3:
-
             senderButtonIndex = self.places.index(int(senderText))
             senderButtonRight = self.buttonsOrder[senderButtonIndex + 1]
             senderButtonRightText = senderButtonRight.text()
@@ -177,7 +175,6 @@ class PlaceButton(QWidget):
             self.finishGame()
 
         elif diffTwoBlock == m3_1:
-
             senderButtonIndex = self.places.index(int(senderText))
             senderButtonLeft = self.buttonsOrder[senderButtonIndex - 1]
             senderButtonLeftText = senderButtonLeft.text()
@@ -194,7 +191,6 @@ class PlaceButton(QWidget):
             self.finishGame()
 
         elif diffTwoBlock == m4_1:
-
             senderButtonIndex = self.places.index(int(senderText))
             senderButtonUp = self.buttonsOrder[senderButtonIndex -4]
             senderButtonLeftText = senderButtonUp.text()
@@ -211,7 +207,6 @@ class PlaceButton(QWidget):
             self.finishGame()
 
         elif diffTwoBlock == m4:
-
             senderButtonIndex = self.places.index(int(senderText))
             senderButtonDown = self.buttonsOrder[senderButtonIndex +4]
             senderButtonLeftText = senderButtonDown.text()
@@ -326,7 +321,7 @@ class PlaceButton(QWidget):
 
     def clickCounts(self):
         self.clickCount += 1
-        self.clickCountLabel.setText("Tık Sayısı: " + str(self.clickCount))
+        self.clickCountLabel.setText("Click Count: " + str(self.clickCount))
 
     def organize(self, stext, sbutton):
         emptyBtnPlc, pressBtnPlc = self.places.index(0), self.places.index(int(stext))
@@ -338,11 +333,10 @@ class PlaceButton(QWidget):
 
     def finishGame(self):
         if self.places == rightOrder:
-            self.clickCountLabel.setText("Oyun Bitti" + "\n\n" + "Tık Sayısı: " + str(self.clickCount))
+            self.clickCountLabel.setText("GAME OVER" + "\n\n" + "Click Count: " + str(self.clickCount))
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     pb = MainWindow()
     sys.exit(app.exec_())
-
