@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication,QHBoxLayout,\
-                            QAction, qApp, QWidget, QMessageBox, QLabel,QPushButton
+from PyQt5.QtWidgets import QMainWindow, QApplication, QHBoxLayout, \
+     QVBoxLayout, QAction, qApp, QWidget, QMessageBox, QLabel, QPushButton, QTextBrowser
 from PyQt5.QtGui import QDesktopServices, QFont
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, QTimer
 import random
 
 m1 = (0, 80)
@@ -13,7 +13,7 @@ m4 = (0, 160)
 m4_1 = (0, -160)
 m5 = (240, 0)
 m5_1 = (-240, 0)
-m6= (0, 240)
+m6 = (0, 240)
 m6_1 = (0, -240)
 
 coords = [(0, 0), (80, 0), (160, 0), (240, 0),
@@ -23,6 +23,7 @@ coords = [(0, 0), (80, 0), (160, 0), (240, 0),
 
 rightOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9,
               10, 11, 12, 13, 14, 15, 0]
+
 
 class MainWindow(QMainWindow):
 
@@ -51,7 +52,7 @@ class MainWindow(QMainWindow):
 
         self.statusBar()
         self.setStyleSheet("background-color: white")
-        self.setGeometry(300, 250, 590, 375)
+        self.move(300, 250)
         self.setFixedSize(590, 375)
         self.setWindowTitle('Slider Puzzle | Selman Y.')
         self.show()
@@ -67,22 +68,65 @@ class PlaceButton(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.c = True
+
+        self.emptyCooords = (240, 240)
+
         self.clickCount = 0
         self.initPB()
+
+    def ctimer(self):
+        self.min = 5
+        self.sec = 0
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.clock)
+        self.timer.start(1000)
+
+    def clock(self):
+
+        if self.sec == 0:
+            self.sec = 59
+            self.min = self.min - 1
+
+        if self.sec<10:
+            if self.min == 0:
+                self.time = "00:00"
+                self.timer.stop()
+            else:
+                self.time = "0" + str(self.min) + ":0" + str(self.sec)
+        else:
+            self.time = "0" + str(self.min) + ":" + str(self.sec)
+
+        self.textb.setText(self.time)
+        #self.timeLabel.setText(self.time)
+        self.sec = self.sec - 1
+
 
     def initPB(self):
         self.font = QFont()
         self.font.setPointSize(19)
-        hbox = QHBoxLayout()
-        self.setLayout(hbox)
+
         self.label = QLabel()
         self.clickCountLabel = QLabel()
+        self.timeLabel = QLabel()
+
+        hbox = QHBoxLayout()
         hbox.addWidget(self.label)
-        hbox.addWidget(self.clickCountLabel)
+        vbox = QVBoxLayout()
+        hbox.addLayout(vbox)
+
+        vbox.addWidget(self.timeLabel)
+        vbox.addWidget(self.clickCountLabel)
+
+        self.setLayout(hbox)
+
         self.clickCountLabel.setMaximumWidth(210)
         self.clickCountLabel.setFont(self.font)
         self.clickCountLabel.setStyleSheet("color: #585942")
 
+        self.timeLabel.setFont(self.font)
+        self.timeLabel.setStyleSheet("color: #585942")
 
         self.table()
 
@@ -113,7 +157,7 @@ class PlaceButton(QWidget):
         self.places = [1, 2, 3, 4, 5, 6, 7, 8, 9,
                        10, 11, 12, 13, 14, 15]
 
-        random.shuffle(self.places)
+        #random.shuffle(self.places)
 
         m = 0
 
@@ -132,15 +176,33 @@ class PlaceButton(QWidget):
             self.buttonsOrder.append(self.newl[i - 1])
             m = m + 1
 
-        self.places.append(0)
-        self.buttonsOrder.append(0)
+        self.textb =QTextBrowser(self.label)
+        self.textb.move(240, 240)
+        self.textb.resize(75, 75)
+        self.textb.setStyleSheet("""background-color: white;
+                                    color: #cbd2db;
+                                    border-style: outset;
+                                    border-width: 4px;    
+                                    border-color: white;
+                                    font: 22px;
+                                    padding-top: 14px;
+                                    padding-left: 2px
+                                    """)
+        self.textb.setText("05:00")
+
+        self.places.append(self.textb)
+        self.buttonsOrder.append(self.textb)
 
     def moveButton(self):
+
+        if self.c:
+            self.ctimer()
+            self.c = False
         sender = self.sender()
         self.senderC = sender
         senderText = sender.text()
 
-        self.emptyCooords = coords[self.places.index(0)]
+        self.emptyCooords = coords[self.places.index(self.textb)]
         self.pressButtonCoords = (sender.x(), sender.y())
 
         diffCoords = (abs(self.emptyCooords[0] - self.pressButtonCoords[0]),
@@ -153,187 +215,107 @@ class PlaceButton(QWidget):
             sender.move(*self.emptyCooords)
             self.organize(senderText, sender)
 
-            self.emptyCooords = coords[self.places.index(0)]
-
+            self.emptyCooords = coords[self.places.index(self.textb)]
+            self.textb.move(*self.emptyCooords)
             self.clickCounts()
             self.finishGame()
 
         elif diffTwoBlock == m3:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonRight = self.buttonsOrder[senderButtonIndex + 1]
-            senderButtonRightText = senderButtonRight.text()
-
-            senderButtonRight.move(*self.emptyCooords)
-            self.organize(senderButtonRightText, senderButtonRight)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.twoBlock(sender, senderText, 1)
+            # Two Block to Right
 
         elif diffTwoBlock == m3_1:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonLeft = self.buttonsOrder[senderButtonIndex - 1]
-            senderButtonLeftText = senderButtonLeft.text()
-
-            senderButtonLeft.move(*self.emptyCooords)
-            self.organize(senderButtonLeftText, senderButtonLeft)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.twoBlock(sender, senderText, -1)
+            # Two Block to Left
 
         elif diffTwoBlock == m4_1:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonUp = self.buttonsOrder[senderButtonIndex -4]
-            senderButtonLeftText = senderButtonUp.text()
-
-            senderButtonUp.move(*self.emptyCooords)
-            self.organize(senderButtonLeftText, senderButtonUp)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.twoBlock(sender, senderText, -4)
+            # Two Block to Up
 
         elif diffTwoBlock == m4:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonDown = self.buttonsOrder[senderButtonIndex +4]
-            senderButtonLeftText = senderButtonDown.text()
-
-            senderButtonDown.move(*self.emptyCooords)
-            self.organize(senderButtonLeftText, senderButtonDown)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.twoBlock(sender, senderText, 4)
+            # Two Block to Down
 
         elif diffTwoBlock == m5:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonRight = self.buttonsOrder[senderButtonIndex + 1]
-            senderButtonRightText = senderButtonRight.text()
-
-            senderButtonRightToRight = self.buttonsOrder[senderButtonIndex + 2]
-            senderButtonRightToRightText = senderButtonRightToRight.text()
-
-            senderButtonRightToRight.move(*self.emptyCooords)
-            self.organize(senderButtonRightToRightText, senderButtonRightToRight)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            senderButtonRight.move(*self.emptyCooords)
-            self.organize(senderButtonRightText, senderButtonRight)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.threeBlock(sender, senderText, 1)
+            # Three Block to Right
 
         elif diffTwoBlock == m5_1:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonRight = self.buttonsOrder[senderButtonIndex - 1]
-            senderButtonRightText = senderButtonRight.text()
-
-            senderButtonRightToRight = self.buttonsOrder[senderButtonIndex - 2]
-            senderButtonRightToRightText = senderButtonRightToRight.text()
-
-            senderButtonRightToRight.move(*self.emptyCooords)
-            self.organize(senderButtonRightToRightText, senderButtonRightToRight)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            senderButtonRight.move(*self.emptyCooords)
-            self.organize(senderButtonRightText, senderButtonRight)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.threeBlock(sender, senderText, -1)
+            # Three Block to Left
 
         elif diffTwoBlock == m6_1:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonUp = self.buttonsOrder[senderButtonIndex -4]
-            senderButtonUpText = senderButtonUp.text()
-
-            senderButtonUpToUp = self.buttonsOrder[senderButtonIndex -8]
-            senderButtonUpToUpText = senderButtonUpToUp.text()
-
-            senderButtonUpToUp.move(*self.emptyCooords)
-            self.organize(senderButtonUpToUpText, senderButtonUpToUp)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            senderButtonUp.move(*self.emptyCooords)
-            self.organize(senderButtonUpText, senderButtonUp)
-
-            self.emptyCooords = coords[self.places.index(0)]
-
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
-
-            self.clickCounts()
-            self.finishGame()
+            self.threeBlock(sender, senderText, -4)
+            # Three Block to Up
 
         elif diffTwoBlock == m6:
-            senderButtonIndex = self.places.index(int(senderText))
-            senderButtonUp = self.buttonsOrder[senderButtonIndex +4]
-            senderButtonUpText = senderButtonUp.text()
+            self.threeBlock(sender, senderText, 4)
+            # Three Block to Down
 
-            senderButtonUpToUp = self.buttonsOrder[senderButtonIndex +8]
-            senderButtonUpToUpText = senderButtonUpToUp.text()
+    def twoBlock(self, sender, senderText, slideNum):
+        senderButtonIndex = self.places.index(int(senderText))
+        senderButtonNext = self.buttonsOrder[senderButtonIndex + slideNum]
+        senderButtonNextText = senderButtonNext.text()
 
-            senderButtonUpToUp.move(*self.emptyCooords)
-            self.organize(senderButtonUpToUpText, senderButtonUpToUp)
+        senderButtonNext.move(*self.emptyCooords)
+        self.organize(senderButtonNextText, senderButtonNext)
 
-            self.emptyCooords = coords[self.places.index(0)]
+        self.emptyCooords = coords[self.places.index(self.textb)]
+        self.textb.move(*self.pressButtonCoords)
 
-            senderButtonUp.move(*self.emptyCooords)
-            self.organize(senderButtonUpText, senderButtonUp)
+        sender.move(*self.emptyCooords)
+        self.organize(senderText, sender)
 
-            self.emptyCooords = coords[self.places.index(0)]
+        self.clickCounts()
+        self.finishGame()
 
-            sender.move(*self.emptyCooords)
-            self.organize(senderText, sender)
+    def threeBlock(self, sender, senderText, slideNum):
+        senderButtonIndex = self.places.index(int(senderText))
+        senderButtonNext = self.buttonsOrder[senderButtonIndex + slideNum]
+        senderButtonNextText = senderButtonNext.text()
 
-            self.clickCounts()
-            self.finishGame()
+        senderButtonNextToNext = self.buttonsOrder[senderButtonIndex + 2 * slideNum]
+        senderButtonRightToRightText = senderButtonNextToNext.text()
 
+        senderButtonNextToNext.move(*self.emptyCooords)
+        self.organize(senderButtonRightToRightText, senderButtonNextToNext)
+
+        self.emptyCooords = coords[self.places.index(self.textb)]
+
+        senderButtonNext.move(*self.emptyCooords)
+        self.organize(senderButtonNextText, senderButtonNext)
+
+        self.emptyCooords = coords[self.places.index(self.textb)]
+        self.textb.move(*self.pressButtonCoords)
+
+        sender.move(*self.emptyCooords)
+        self.organize(senderText, sender)
+
+        self.clickCounts()
+        self.finishGame()
 
     def clickCounts(self):
         self.clickCount += 1
         self.clickCountLabel.setText("Click Count: " + str(self.clickCount))
 
     def organize(self, stext, sbutton):
-        emptyBtnPlc, pressBtnPlc = self.places.index(0), self.places.index(int(stext))
+        emptyBtnPlc, pressBtnPlc = self.places.index(self.textb), self.places.index(int(stext))
         self.places[pressBtnPlc], self.places[emptyBtnPlc] = self.places[emptyBtnPlc], self.places[pressBtnPlc]
 
-        emptyBtnPlc1, pressBtnPlc1 = self.buttonsOrder.index(0), self.buttonsOrder.index(sbutton)
+        emptyBtnPlc1, pressBtnPlc1 = self.buttonsOrder.index(self.textb), self.buttonsOrder.index(sbutton)
         self.buttonsOrder[pressBtnPlc1], self.buttonsOrder[emptyBtnPlc1] = self.buttonsOrder[emptyBtnPlc1], \
                                                                            self.buttonsOrder[pressBtnPlc1]
 
     def finishGame(self):
         if self.places == rightOrder:
             self.clickCountLabel.setText("GAME OVER" + "\n\n" + "Click Count: " + str(self.clickCount))
+            point = (300-60*self.min + self.sec)**1.5 - self.clickCount**0.9
+
+            self.timer.stop()
+            QMessageBox.information(self, 'GAME OVER', "Click Count= " + str(self.clickCount) +
+                                "\n" + "Time = " +str(self.time) + "\n\nPoint = " + str(point))
+
+            self.timer.start()
 
 
 if __name__ == '__main__':
